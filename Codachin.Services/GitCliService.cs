@@ -1,4 +1,5 @@
 ﻿using Codachin.Services.dto;
+using Codachin.Services.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,10 +19,24 @@ namespace Codachin.Services
             {
                 return repositoryInformation;
             }
-            throw new ArgumentException($"The location {path} is not a git repository ");
+            
+            throw new GitException($"The location {path} is not a git repository ");
+
         }
 
+        public string BranchName
+        {
+            get
+            {
+                var result = RunCommand("rev-parse --abbrev-ref HEAD");
+                return result;
+            }
 
+            set
+            {
+                var result = RunCommand(String.Format("checkout {0}", value));
+            }
+        }
 
         public IEnumerable<Commit> Log
         {
@@ -48,7 +63,7 @@ namespace Codachin.Services
 
             if (path == null || !Directory.Exists(path))
             {
-                throw new ArgumentException($"Directory path must exists and should be a valid path, provided path was -> {path}");
+                throw new GitException($"Directory path must exists and should be a valid path, provided path was -> {path}");
             }
 
             var processInfo = new ProcessStartInfo
@@ -76,9 +91,14 @@ namespace Codachin.Services
         private string RunCommand(string args)
         {
             _gitProcess.StartInfo.Arguments = args;
+            _gitProcess.StartInfo.RedirectStandardError = true;
             _gitProcess.Start();
             string output = _gitProcess.StandardOutput.ReadToEnd();
             _gitProcess.WaitForExit();
+
+            if (_gitProcess.ExitCode != 0) {
+                throw new GitException(_gitProcess.StandardError.ReadToEnd());
+            }
             return output;
         }
 

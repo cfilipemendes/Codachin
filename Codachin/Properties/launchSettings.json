@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Codachin": {
+      "commandName": "Project",
+      "commandLineArgs": "checkout teste123"
+    }
+  }
+}
