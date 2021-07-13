@@ -2,7 +2,7 @@
   "profiles": {
     "Codachin": {
       "commandName": "Project",
-      "commandLineArgs": "checkout teste123"
+      "commandLineArgs": "log"
     }
   }
 }

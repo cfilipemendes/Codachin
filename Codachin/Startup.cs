@@ -8,14 +8,12 @@ namespace Codachin
 {
     public class Startup
     {
-        // directory of the git repository
-        private static string _directory;
 
         public static int Main(string[] args)
         {
             try
             {
-                using (var _gitService = GitCliService.GetRepositoryInformationForPath(_directory))
+                using (var _gitService = GitCliService.GetRepositoryInformationForPath(Directory.GetCurrentDirectory()))
                 {
                     return CommandLine.Parser.Default.ParseArguments<Log, Checkout>(args)
                         .MapResult(
