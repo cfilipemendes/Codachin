@@ -1,86 +1,74 @@
-﻿using Codachin.Services.dto;
+﻿using Codachin.Services.Dto;
 using Codachin.Services.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Codachin.Services
 {
-    public class GitCliService : IDisposable
+    public class GitCliService : IGitService, IDisposable
     {
+        private IUrlValidator urlValidator;
         private readonly Process _gitProcess;
         private bool _disposed;
 
-        public static GitCliService GetRepositoryInformationForPath(string path)
+        public GitCliService(IUrlValidator urlValidator)
         {
-            var repositoryInformation = new GitCliService(path);
-            if (repositoryInformation.IsGitRepository)
-            {
-                return repositoryInformation;
-            }
-            
-            throw new GitException($"The location {path} is not a git repository ");
+            this.urlValidator = urlValidator;
 
-        }
-
-        public string BranchName
-        {
-            get
-            {
-                var result = RunCommand("rev-parse --abbrev-ref HEAD");
-                return result;
-            }
-
-            set
-            {
-                var result = RunCommand(String.Format("checkout {0}", value));
-            }
-        }
-
-        public IEnumerable<Commit> Log
-        {
-            get
-            {
-                int skip = 0;
-                while (true)
-                {
-                    var entry = RunCommand(String.Format("log --skip={0} -n1", skip++));
-
-                    if (String.IsNullOrWhiteSpace(entry))
-                    {
-                        yield break;
-                    }
-
-                    yield return Commit.Parse(entry);
-                }
-            }
-        }
-
-
-        private GitCliService(string path)
-        {
-
-            if (path == null || !Directory.Exists(path))
-            {
-                throw new GitException($"Directory path must exists and should be a valid path, provided path was -> {path}");
-            }
-
-            var processInfo = new ProcessStartInfo
+            _gitProcess = new Process();
+            _gitProcess.StartInfo = new ProcessStartInfo
             {
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 FileName = "git.exe",
                 CreateNoWindow = true,
-                WorkingDirectory = (path != null && Directory.Exists(path)) ? path : Environment.CurrentDirectory
+                WorkingDirectory = Environment.CurrentDirectory
             };
-
-            _gitProcess = new Process();
-            _gitProcess.StartInfo = processInfo;
-
         }
 
-         private bool IsGitRepository
+        public Task<IEnumerable<Commit>> GetLogAsync()
+        {
+            return GetLogAsync(new PaginationFilter());
+        }
+        public Task<IEnumerable<Commit>> GetLogAsync(PaginationFilter paging)
+        {
+
+            int skip = paging.PerPage * (paging.Page - 1);
+            int max_Commits = paging.PerPage * paging.Page;
+            List<Commit> commitHistory = new List<Commit>();
+
+            while (skip < max_Commits)
+            {
+                var entry = RunCommand(String.Format("log --skip={0} -n1", skip++));
+
+                if (String.IsNullOrWhiteSpace(entry))
+                {
+                    break;
+                }
+
+                commitHistory.Add( ParseCommit(entry));
+            }
+            return Task.FromResult((IEnumerable<Commit>)commitHistory);
+        }
+
+        public IGitService Init(string url)
+        {
+            string repositoryPath = urlValidator.ValidateUrl(url).Item2;
+
+            if (!Directory.Exists(repositoryPath) || !IsGitRepository)
+            {
+                RunCommand($"clone {url}");
+            }
+
+            _gitProcess.StartInfo.WorkingDirectory = repositoryPath;
+
+            return this;
+        }
+
+        private bool IsGitRepository
          {
             get
             {
@@ -102,6 +90,40 @@ namespace Codachin.Services
             return output;
         }
 
+        private Commit ParseCommit(string commitInfo)
+        {
+            Commit currentCommit = new Commit();
+            using (var strReader = new StringReader(commitInfo))
+            {
+                do
+                {
+                    var line = strReader.ReadLine();
+
+                    if (line.StartsWith("commit"))
+                    {
+                        currentCommit.Sha = line.Split(' ')[1];
+                    }
+                    else if (line.StartsWith("Author:"))
+                    {
+                        currentCommit.Author = line.Split(": ")[1];
+                    }
+                    else if (line.StartsWith("Date:"))
+                    {
+                    
+                        currentCommit.Date = line.Split(new[] { ':' }, 2)[1].TrimStart();
+                    }
+                    else
+                    {
+                        currentCommit.Message += line;
+                    }
+                }
+                while (strReader.Peek() != -1);
+            }
+
+            return currentCommit;
+
+        }
+
         public void Dispose()
         {
             if (!_disposed)
@@ -110,5 +132,6 @@ namespace Codachin.Services
             }
         }
 
+        
     }
 }

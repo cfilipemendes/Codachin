@@ -2,7 +2,7 @@
   "profiles": {
     "Codachin": {
       "commandName": "Project",
-      "commandLineArgs": "log"
+      "commandLineArgs": "https://github.com/cfilipemendes/nossacoin.git -p 2 -l 2"
     }
   }
 }
