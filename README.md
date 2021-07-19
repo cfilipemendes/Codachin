@@ -53,6 +53,7 @@ I would like to list a few things that I would improve if I had more time:
 * More tests.
 * Improve GitCliService , System I.O and Folder accesses can be extracted to another layer/class so we can easily reuse and test them. This would be my next step if tomorrow was not monday :p 
 * Improve exception handling. Currently its quite simple and generic but I do have a few ideas to improve it.
+* Turn the API executable into a docker image so it can easily be executed in multiple distros and easily deployed.
 * Finally, adding more features ! Changing branches for example. 
 
 
