@@ -1,4 +1,5 @@
 using Codachin.Services;
+using Codachin.Services.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -23,7 +24,7 @@ namespace Codachin.API
         {
             services.AddScoped<IUrlValidator, GitUrlValidator>();
             services.AddScoped<IGitService, GitApiService>();
-
+            services.AddTransient<IHttpNetWrapper>(x => new HttpNetWrapper("https://api.github.com"));
 
             services.AddControllers().AddNewtonsoftJson().AddNewtonsoftJson(x => x.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
             services.AddSwaggerGen(c =>
@@ -38,9 +39,9 @@ namespace Codachin.API
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Codachin.API v1"));
             }
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Codachin.API v1"));
 
             app.UseRouting();
 

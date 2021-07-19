@@ -18,17 +18,21 @@ namespace Codachin.Services
     {
         private bool _disposed;
         
-        private const string GitApiBaseUri = "https://api.github.com";
         private const string _gitApiCommitsEndpoint = "/repos/{0}/{1}/commits";
 
         private IUrlValidator urlValidator;
         private IHttpNetWrapper client;
-        private string gitUri;
+        private string _gitUser;
+        private string _repository;
 
-        public GitApiService(IUrlValidator urlValidator)
+        public string Repository => _repository;
+
+        public string GitUser => _gitUser;
+
+        public GitApiService(IUrlValidator urlValidator, IHttpNetWrapper client)
         {
             this.urlValidator = urlValidator;
-            client = new HttpNetWrapper(GitApiBaseUri);
+            this.client = client;
         }
 
         public async Task<IEnumerable<Commit>> GetLogAsync()
@@ -39,11 +43,7 @@ namespace Codachin.Services
         {
             try
             {
-                var gituserAndRepo = urlValidator.ValidateUrl(gitUri);
-                var gitUser = gituserAndRepo.Item1;
-                var repository = gituserAndRepo.Item2;
-
-                HttpResponseMessage response = await client.GetAsync(string.Format(_gitApiCommitsEndpoint,gitUser,repository) 
+                HttpResponseMessage response = await client.GetAsync(string.Format(_gitApiCommitsEndpoint,_gitUser,_repository) 
                     + $"?page={paging?.Page}&per_page={paging?.PerPage}");
                 if (response.IsSuccessStatusCode)
                 {
@@ -84,7 +84,9 @@ namespace Codachin.Services
 
         public IGitService Init(string gitUri)
         {
-            this.gitUri = gitUri;
+            var gituserAndRepo = urlValidator.ValidateUrl(gitUri);
+            this._gitUser = gituserAndRepo.Item1;
+            this._repository = gituserAndRepo.Item2;
             return this;
         }
     }

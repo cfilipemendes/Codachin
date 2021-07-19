@@ -14,10 +14,18 @@ namespace Codachin.Services
         private readonly Process _gitProcess;
         private bool _disposed;
 
+        private string _gitUser;
+        private string _repository;
+        public string Repository => _repository;
+
+        public string GitUser => _gitUser;
+
         public GitCliService(IUrlValidator urlValidator)
         {
             this.urlValidator = urlValidator;
 
+            //TODO this process should be separated. Another class only to execute processes.
+            // Easily reused and easily tested.
             _gitProcess = new Process();
             _gitProcess.StartInfo = new ProcessStartInfo
             {
@@ -56,27 +64,24 @@ namespace Codachin.Services
 
         public IGitService Init(string url)
         {
-            string repositoryPath = urlValidator.ValidateUrl(url).Item2;
+            var both = urlValidator.ValidateUrl(url);
+            this._gitUser = both.Item1;
+            this._repository = both.Item2;
+            Console.WriteLine(_repository, url);
 
-            if (!Directory.Exists(repositoryPath) || !IsGitRepository)
+            if (!Directory.Exists(_repository))
             {
+                Console.WriteLine("Clone");
                 RunCommand($"clone {url}");
             }
 
-            _gitProcess.StartInfo.WorkingDirectory = repositoryPath;
+            _gitProcess.StartInfo.WorkingDirectory = _repository;
 
             return this;
         }
 
-        private bool IsGitRepository
-         {
-            get
-            {
-                return !String.IsNullOrWhiteSpace(RunCommand("log -1"));
-            }
-         }
 
-        private string RunCommand(string args)
+        string RunCommand(string args)
         {
             _gitProcess.StartInfo.Arguments = args;
             _gitProcess.StartInfo.RedirectStandardError = true;

@@ -42,6 +42,7 @@ namespace Codachin.API.Controllers
                     response.Message = $"Unable to get git commits from API. Using CLI as backup. Error was: {e.Message}";
                 }
                 
+                //TODO this Client should also be injected. Using a factory or a map can both be good ideas.
                 using var gitCli = new GitCliService(new GitUrlValidator()).Init(url);
                 return Ok(new PagedResponse<IEnumerable<Commit>>(await gitCli.GetLogAsync(pager), pager.Page, pager.PerPage));
 
