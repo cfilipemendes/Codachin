@@ -1,9 +1,6 @@
 
 # Codachin - A commit viewer
 
-Hi ! First of all thanks for the challenge and it was a great way to improve my knowledge in most of the topics.
-So, I tried to do all the points. Between 2.1 and 2.2 I decided to go with the API.
-
 ## Software Required.
 
 Git (i.e you should be able to execute git.exe in the shell)
