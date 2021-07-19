@@ -67,11 +67,9 @@ namespace Codachin.Services
             var both = urlValidator.ValidateUrl(url);
             this._gitUser = both.Item1;
             this._repository = both.Item2;
-            Console.WriteLine(_repository, url);
 
             if (!Directory.Exists(_repository))
             {
-                Console.WriteLine("Clone");
                 RunCommand($"clone {url}");
             }
 
